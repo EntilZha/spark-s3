@@ -12,9 +12,18 @@
  * limitations under the License.
  */
 
-logLevel := Level.Warn
+package io.entilzha.spark.s3
 
-resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
+import org.apache.spark.{TaskContext, Partition, SparkContext}
+import org.apache.spark.rdd.RDD
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.5.4")
-addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "0.8.1")
+
+class S3Partition(keyIndex: Int, key: String) extends Partition {
+  override def index: Int = keyIndex
+}
+
+class S3RDD(@transient sc: SparkContext) extends RDD[String](sc, Nil) {
+  override def compute(split: Partition, context: TaskContext): Iterator[String] = ???
+
+  override protected def getPartitions: Array[Partition] = ???
+}

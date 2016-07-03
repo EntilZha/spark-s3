@@ -12,9 +12,8 @@
  * limitations under the License.
  */
 
-logLevel := Level.Warn
+package io.entilzha.spark.s3
 
-resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
+class LPTAlgorithmSpec {
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.5.4")
-addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "0.8.1")
+}
