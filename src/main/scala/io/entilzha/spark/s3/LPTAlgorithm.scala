@@ -59,7 +59,7 @@ private [s3] object LPTAlgorithm {
     def PartitionOrder = new Ordering[Partition] {
       def compare(left: Partition, right: Partition) = {
         if (math.abs(left.size - right.size) <= sizeError) {
-          left.files.length.compare(right.files.length)
+          -left.files.length.compare(right.files.length)
         } else {
           (-left.size).compare(-right.size)
         }

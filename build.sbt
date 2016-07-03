@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+import com.typesafe.sbt.SbtSite.SiteKeys.siteMappings
+
 name := "spark-s3"
 
 version := "0.0.0"
@@ -34,8 +36,14 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
 
+
+
+site.settings
+siteMappings ++= Seq(
+  file("src/site/CNAME") -> "CNAME"
+)
+site.includeScaladoc()
+
 ghpages.settings
 
 git.remoteRepo := "git@github.com:EntilZha/spark-s3.git"
-
-site.includeScaladoc()
