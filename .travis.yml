@@ -11,3 +11,4 @@ env:
     - secure: ORZPRqMQD24LJeC7Hdh7bSaIdg3bUkdROMjIubmm5JG2AEWdTG+blklaDdKPG5o8k3wJ3Gr1GPopw4SLvQ/DkMxPGFTCiP6924vO9elhCcz+WiOfypnsFfuSWHwB1972qmOERNcfZS1AhkrqjGEAXc6jSdHR1Xy5F/fqBkeqg+dQJqeAEiTv+qvz+pZdddbnllmiLXBP9IsnVDJg2og052Ykjm2JKymDbm7bVOgMOidn79e7lqOv4z5JnheeWx7PWsTjsODzr5/wFifpIxh4h2vb2UjzbJNSk9AzXhXxO+adbdsAGHTKtOy/xIJNJGDKjhr80F2b6E0cdXhvDkZ36+ptfSJsHbsy038Op+1pwrkwKHdwt9iUrXbWGb26I/RG/JP/dLMucfwR5XdTvtoz7gGcpUJjDF6K/dD1dNFTNRmsOMtq+LOlzpYb1iikbl802ecixk/PfO/IR9knnG0fc2HTuAtwGgdsHVC0YxetG8UgDvYj9e2AxYZ+urnmsg59+uoFP5lfPjZO7DQPANWskdq9wISMBJEvjcuQLo9tmGiPXvDp2ybio/Wrlh+mhWUyfGqh1PXPDd4tc7g5IiXYkIUpS7E4Aryh9A+xHeDgyTzrZQrEMdS8I2M2p2+umwKHaKCemy1S2yewUBmlMm4X3W/JXuqhixJ++U6AOzbIe54=
 before_install:
   - openssl aes-256-cbc -K $encrypted_f2de8db73938_key -iv $encrypted_f2de8db73938_iv -in travis_rsa.enc -out ~/.ssh/id_rsa -d
+  - chmod 700 ~/.ssh/id_rsa
