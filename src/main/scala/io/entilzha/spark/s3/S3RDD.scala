@@ -24,8 +24,8 @@ import org.apache.spark.{InterruptibleIterator, TaskContext, Partition, SparkCon
 import org.apache.spark.rdd.RDD
 
 
-private [s3] class S3Partition(keyIndex: Int, val key: String) extends Partition {
-  override def index: Int = keyIndex
+private [s3] class S3Partition(partitionIndex: Int, val keys: Seq[String]) extends Partition {
+  override def index: Int = partitionIndex
 }
 
 class S3RDD(@transient sc: SparkContext,
@@ -88,12 +88,22 @@ class S3RDD(@transient sc: SparkContext,
   override def compute(partition: Partition, context: TaskContext): Iterator[String] = {
     val client = createS3Client()
     val s3Partition = partition.asInstanceOf[S3Partition]
-    val iter = CompressionUtils.decompress(client.getObject(bucket, s3Partition.key).getObjectContent)
+    val iter = s3Partition.keys.iterator.flatMap { key =>
+      CompressionUtils.decompress(client.getObject(bucket, key).getObjectContent)
+    }
     new InterruptibleIterator[String](context, iter)
   }
 
   override protected def getPartitions: Array[Partition] = {
-    val keys = listSummaries(bucket, prefixes).map(_.getKey)
-    keys.zipWithIndex.map { case (key, i) => new S3Partition(i, key)}.toArray
+    val summaries = listSummaries(bucket, prefixes)
+    if (summaries.length <= sc.defaultParallelism) {
+      summaries.map(_.getKey).zipWithIndex.map {
+        case (key, i) => new S3Partition(i, Seq(key))
+      }.toArray
+    } else {
+      val files = summaries.map(f => (f.getKey, f.getSize))
+      val partitions = LPTAlgorithm.calculateOptimalPartitions(files, sc.defaultParallelism)
+      partitions.map(_._2).zipWithIndex.map { case (keys, i) => new S3Partition(i, keys)}.toArray
+    }
   }
 }

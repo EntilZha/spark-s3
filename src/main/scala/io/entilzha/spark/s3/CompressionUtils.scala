@@ -14,11 +14,13 @@
 
 package io.entilzha.spark.s3
 
-import scala.io.Source
 
 import java.io.{BufferedInputStream, InputStream}
 
+import scala.io.Source
+
 import org.apache.commons.compress.compressors.{CompressorException, CompressorStreamFactory}
+
 
 private [s3] object CompressionUtils {
   def decompress(input: InputStream): Iterator[String] = {
@@ -31,7 +33,6 @@ private [s3] object CompressionUtils {
         bufferedInput.reset()
         val compressedInput = bufferedInput
         Source.fromInputStream(compressedInput).getLines
-      case e: Exception => throw e
     }
   }
 }

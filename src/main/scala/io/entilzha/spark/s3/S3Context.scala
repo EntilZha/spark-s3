@@ -32,6 +32,7 @@ object S3Context {
 
 
 class S3Context(@transient sc: SparkContext) extends Serializable {
+  @scala.annotation.varargs
   def textFileByPrefix(bucket: String, prefix: String, additionalPrefixes: String*): S3RDD = {
     new S3RDD(sc, bucket, prefix +: additionalPrefixes)
   }
