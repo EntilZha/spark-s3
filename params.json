@@ -1,0 +1,6 @@
+{
+  "name": "Spark-s3",
+  "tagline": "",
+  "body": "# spark-s3\r\n\r\nSpark package to read natively through Amazon S3 client instead of indirectly through hadoop\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
