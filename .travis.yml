@@ -4,7 +4,7 @@ scala:
 after_success:
   - eval "$(ssh-agent -s)"
   - ssh-add ~/.ssh/id_rsa
-  - git config --global user.email "ski.rodriguez@gmail.com"
+  - git config --global user.email "pedro@snowgeek.org"
   - git config --global user.name "Travis CI"
   - sbt ghpagesPushSite
 env:

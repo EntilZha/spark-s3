@@ -4,6 +4,10 @@
 
 Spark package to read natively through Amazon S3 client instead of indirectly through hadoop
 
+## Status
+Currently this is being very actively developed. An announcement will be made once a first release
+is ready
+
 # License
 
 ```
