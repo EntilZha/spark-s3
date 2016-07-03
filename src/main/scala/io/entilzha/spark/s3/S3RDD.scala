@@ -14,16 +14,86 @@
 
 package io.entilzha.spark.s3
 
-import org.apache.spark.{TaskContext, Partition, SparkContext}
+import scala.collection.JavaConverters._
+
+import com.amazonaws.auth.{DefaultAWSCredentialsProviderChain, BasicAWSCredentials}
+import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.model.{ListObjectsRequest, S3ObjectSummary}
+
+import org.apache.spark.{InterruptibleIterator, TaskContext, Partition, SparkContext}
 import org.apache.spark.rdd.RDD
 
 
-class S3Partition(keyIndex: Int, key: String) extends Partition {
+private [s3] class S3Partition(keyIndex: Int, val key: String) extends Partition {
   override def index: Int = keyIndex
 }
 
-class S3RDD(@transient sc: SparkContext) extends RDD[String](sc, Nil) {
-  override def compute(split: Partition, context: TaskContext): Iterator[String] = ???
+class S3RDD(@transient sc: SparkContext,
+            bucket: String,
+            prefixes: Seq[String]) extends RDD[String](sc, Nil) {
+  private val accessKeyId = sc.hadoopConfiguration.get("fs.s3.awsAccessKeyId") match {
+    case null => None
+    case "" => None
+    case s => Some(s)
+  }
+  private val secretAccessKey = sc.hadoopConfiguration.get("fs.s3.awsSecretAccessKey") match {
+    case null => None
+    case "" => None
+    case s => Some(s)
+  }
 
-  override protected def getPartitions: Array[Partition] = ???
+  /**
+    * Attempt to create an Amazon S3 client. We first check to see if the Spark Hadoop configuration
+    * has AWS keys otherwise default to the DefaultAWSCredentialsProviderChain which looks for
+    * credentials in various default locations.
+    *
+    * @return AmazonS3Client configured with AWS keys
+    */
+  private def createS3Client(): AmazonS3Client = {
+    val credentials = (accessKeyId, secretAccessKey) match {
+      case (Some(key), Some(secret)) => new BasicAWSCredentials(key, secret)
+      case _ => new DefaultAWSCredentialsProviderChain().getCredentials
+    }
+    new AmazonS3Client(credentials)
+  }
+
+  /**
+    * Given the bucket and a list of prefixes find all matching objects and return their summaries
+    *
+    * @param bucket S3 Bucket to search
+    * @param prefixes Varargs of string prefixes to filter by
+    * @return S3 object summaries matching the bucket and prefixes
+    */
+  private def listSummaries(bucket: String, prefixes: Seq[String]): Array[S3ObjectSummary] = {
+    val prefixSeq = prefixes.length match {
+      case 0 | 1 => prefixes
+      case _ => prefixes.par
+    }
+    prefixSeq.flatMap { prefix =>
+      val request = new ListObjectsRequest()
+      request.setBucketName(bucket)
+      request.setPrefix(prefix)
+      request.setMaxKeys(Int.MaxValue)
+      val client = createS3Client()
+      var objects = client.listObjects(request)
+      var summaries = objects.getObjectSummaries.asScala.toSeq
+      while (objects.isTruncated) {
+        objects = client.listNextBatchOfObjects(objects)
+        summaries ++= objects.getObjectSummaries.asScala.toSeq
+      }
+      summaries
+    }.toArray
+  }
+
+  override def compute(partition: Partition, context: TaskContext): Iterator[String] = {
+    val client = createS3Client()
+    val s3Partition = partition.asInstanceOf[S3Partition]
+    val iter = CompressionUtils.decompress(client.getObject(bucket, s3Partition.key).getObjectContent)
+    new InterruptibleIterator[String](context, iter)
+  }
+
+  override protected def getPartitions: Array[Partition] = {
+    val keys = listSummaries(bucket, prefixes).map(_.getKey)
+    keys.zipWithIndex.map { case (key, i) => new S3Partition(i, key)}.toArray
+  }
 }
