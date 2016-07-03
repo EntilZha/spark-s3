@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/EntilZha/spark-s3.svg?branch=master)](https://travis-ci.org/EntilZha/spark-s3)
+
 # spark-s3
 
 Spark package to read natively through Amazon S3 client instead of indirectly through hadoop
