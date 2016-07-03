@@ -32,6 +32,14 @@ object S3Context {
 
 
 class S3Context(@transient sc: SparkContext) extends Serializable {
+  /**
+    * Basic entrypoint to Amazon S3 access. Requires a S3 bucket and at least one prefix to match on
+    *
+    * @param bucket Bucket to read from
+    * @param prefix First prefix to match
+    * @param additionalPrefixes Additional prefixes to match
+    * @return [[S3RDD]] with contents of files with bucket and prefixes
+    */
   @scala.annotation.varargs
   def textFileByPrefix(bucket: String, prefix: String, additionalPrefixes: String*): S3RDD = {
     new S3RDD(sc, bucket, prefix +: additionalPrefixes)
