@@ -26,10 +26,12 @@ object S3Context {
 
 class S3Context(@transient sc: SparkContext) extends Serializable {
   val accessKeyId = sc.hadoopConfiguration.get("fs.s3.awsAccessKeyId") match {
+    case null => None
     case "" => None
     case s => Some(s)
   }
   val secretAccessKey = sc.hadoopConfiguration.get("fs.s3.awsSecretAccessKey") match {
+    case null => None
     case "" => None
     case s => Some(s)
   }
