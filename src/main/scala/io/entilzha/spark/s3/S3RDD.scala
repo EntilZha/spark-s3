@@ -93,6 +93,10 @@ class S3RDD(@transient sc: SparkContext,
     val s3Partition = partition.asInstanceOf[S3Partition]
     val iter = new Iterator[String] {
       val taskMetrics = context.taskMetrics()
+      
+      // Spark Hadoop RDDs use getInputMetricsForReadMethod to help set input metrics
+      // Unfortunately that method is private and the only way to set inputMetrics to a non-None
+      // value. Therefore, it is necessary to use reflection to enable a call to the private method
       val inputMetrics = PrivateMethodUtil.p(taskMetrics)(
         'getInputMetricsForReadMethod)(DataReadMethod.Network).asInstanceOf[InputMetrics]
       inputMetrics.setBytesReadCallback(Some(() => {
