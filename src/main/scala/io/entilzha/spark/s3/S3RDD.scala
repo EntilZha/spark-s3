@@ -14,6 +14,8 @@
 
 package io.entilzha.spark.s3
 
+import org.apache.spark.executor.{InputMetrics, DataReadMethod}
+
 import scala.collection.JavaConverters._
 
 import com.amazonaws.auth.{DefaultAWSCredentialsProviderChain, BasicAWSCredentials}
@@ -24,7 +26,9 @@ import org.apache.spark.{InterruptibleIterator, TaskContext, Partition, SparkCon
 import org.apache.spark.rdd.RDD
 
 
-private [s3] class S3Partition(partitionIndex: Int, val keys: Seq[String]) extends Partition {
+private [s3] class S3Partition(partitionIndex: Int,
+                               val keys: Seq[String],
+                               val size: Long) extends Partition {
   override def index: Int = partitionIndex
 }
 
@@ -86,24 +90,43 @@ class S3RDD(@transient sc: SparkContext,
   }
 
   override def compute(partition: Partition, context: TaskContext): Iterator[String] = {
-    val client = createS3Client()
     val s3Partition = partition.asInstanceOf[S3Partition]
-    val iter = s3Partition.keys.iterator.flatMap { key =>
-      CompressionUtils.decompress(client.getObject(bucket, key).getObjectContent)
+    val iter = new Iterator[String] {
+      val taskMetrics = context.taskMetrics()
+      val inputMetrics = PrivateMethodUtil.p(taskMetrics)(
+        'getInputMetricsForReadMethod)(DataReadMethod.Network).asInstanceOf[InputMetrics]
+      inputMetrics.setBytesReadCallback(Some(() => {
+        s3Partition.size
+      }))
+      context.addTaskCompletionListener(context => close())
+
+      val client = createS3Client()
+      val s3Iter = s3Partition.keys.iterator.flatMap { key =>
+        CompressionUtils.decompress(client.getObject(bucket, key).getObjectContent)
+      }
+      val reader = new InterruptibleIterator[String](context, s3Iter)
+
+      override def hasNext: Boolean = reader.hasNext
+
+      override def next(): String = reader.next()
+
+      private def close() = {
+        inputMetrics.updateBytesRead()
+      }
     }
-    new InterruptibleIterator[String](context, iter)
+    iter
   }
 
   override protected def getPartitions: Array[Partition] = {
     val summaries = listSummaries(bucket, prefixes)
     if (summaries.length <= sc.defaultParallelism) {
-      summaries.map(_.getKey).zipWithIndex.map {
-        case (key, i) => new S3Partition(i, Seq(key))
+      summaries.map(s => (s.getKey, s.getSize)).zipWithIndex.map {
+        case ((key, size), i) => new S3Partition(i, Seq(key), size)
       }.toArray
     } else {
       val files = summaries.map(f => (f.getKey, f.getSize))
       val partitions = LPTAlgorithm.calculateOptimalPartitions(files, sc.defaultParallelism)
-      partitions.map(_._2).zipWithIndex.map { case (keys, i) => new S3Partition(i, keys)}.toArray
+      partitions.zipWithIndex.map { case ((size, keys), i) => new S3Partition(i, keys, size)}.toArray
     }
   }
 }
