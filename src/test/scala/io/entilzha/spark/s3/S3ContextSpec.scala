@@ -59,6 +59,25 @@ class S3ContextSpec extends FlatSpec with Matchers with BeforeAndAfter {
       "spark-s3/test-text.txt",
       "spark-s3/test-text.txt"
     ).glom.collect().map(_.length)
+    // Since these files have exactly equal sizes, they should be put in 2 buckets so distinct
+    // their length should be 1.
     assert(partitionSizes.distinct.length == 1)
+  }
+
+  // This runs against S3 files that are of the following sizes:
+  // 2 1000KB files, 2 500KB files, 10 100KB files
+
+  // Files were generated with:
+  // $ base64 /dev/urandom | head -c 500000 > file.txt
+  it should "balance files by size across partitions" in {
+    val partitionSizes = sc.s3.textFileByPrefix(
+      "entilzha.io",
+      "spark-s3/size-tests"
+    ).glom.map(_.length).collect()
+
+    // Line count checks were done by hand and inserted here
+    partitionSizes.foreach { size =>
+      assert(size == 12989 || size == 12988)
+    }
   }
 }
