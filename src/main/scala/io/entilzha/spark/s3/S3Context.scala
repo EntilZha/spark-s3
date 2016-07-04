@@ -19,6 +19,7 @@ import org.apache.spark.SparkContext
 
 object S3Context {
   def apply(sc: SparkContext) = new S3Context(sc)
+  def apply(sc: SparkContext, defaultNumPartitions: Int) = new S3Context(sc, defaultNumPartitions)
   object implicits {
     implicit def sparkContextToS3ContextWrapper(sc: SparkContext): S3ContextWrapper = {
       new S3ContextWrapper(sc)
@@ -26,12 +27,16 @@ object S3Context {
   }
 
   class S3ContextWrapper(@transient sc: SparkContext) {
-    val s3 = S3Context(sc)
+    def s3 = S3Context(sc)
+    def s3(defaultNumPartitions: Int) = S3Context(sc, defaultNumPartitions)
   }
 }
 
 
-class S3Context(@transient sc: SparkContext) extends Serializable {
+class S3Context(@transient sc: SparkContext, defaultNumPartitions: Int) extends Serializable {
+  def this(@transient sc: SparkContext) {
+    this(sc, sc.defaultParallelism)
+  }
   /**
     * Basic entrypoint to Amazon S3 access. Requires a S3 bucket and at least one prefix to match on
     *
@@ -42,6 +47,6 @@ class S3Context(@transient sc: SparkContext) extends Serializable {
     */
   @scala.annotation.varargs
   def textFileByPrefix(bucket: String, prefix: String, additionalPrefixes: String*): S3RDD = {
-    new S3RDD(sc, bucket, prefix +: additionalPrefixes)
+    new S3RDD(sc, bucket, prefix +: additionalPrefixes, defaultNumPartitions)
   }
 }

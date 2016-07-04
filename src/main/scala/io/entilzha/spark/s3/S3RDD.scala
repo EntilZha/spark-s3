@@ -34,7 +34,8 @@ private [s3] class S3Partition(partitionIndex: Int,
 
 class S3RDD(@transient sc: SparkContext,
             bucket: String,
-            prefixes: Seq[String]) extends RDD[String](sc, Nil) {
+            prefixes: Seq[String],
+            defaultNumPartitions: Int) extends RDD[String](sc, Nil) {
   private val accessKeyId = sc.hadoopConfiguration.get("fs.s3.awsAccessKeyId") match {
     case null => None
     case "" => None
@@ -93,7 +94,7 @@ class S3RDD(@transient sc: SparkContext,
     val s3Partition = partition.asInstanceOf[S3Partition]
     val iter = new Iterator[String] {
       val taskMetrics = context.taskMetrics()
-      
+
       // Spark Hadoop RDDs use getInputMetricsForReadMethod to help set input metrics
       // Unfortunately that method is private and the only way to set inputMetrics to a non-None
       // value. Therefore, it is necessary to use reflection to enable a call to the private method
@@ -123,13 +124,13 @@ class S3RDD(@transient sc: SparkContext,
 
   override protected def getPartitions: Array[Partition] = {
     val summaries = listSummaries(bucket, prefixes)
-    if (summaries.length <= sc.defaultParallelism) {
+    if (summaries.length <= defaultNumPartitions) {
       summaries.map(s => (s.getKey, s.getSize)).zipWithIndex.map {
         case ((key, size), i) => new S3Partition(i, Seq(key), size)
       }.toArray
     } else {
       val files = summaries.map(f => (f.getKey, f.getSize))
-      val partitions = LPTAlgorithm.calculateOptimalPartitions(files, sc.defaultParallelism)
+      val partitions = LPTAlgorithm.calculateOptimalPartitions(files, defaultNumPartitions)
       partitions.zipWithIndex.map { case ((size, keys), i) => new S3Partition(i, keys, size)}.toArray
     }
   }
