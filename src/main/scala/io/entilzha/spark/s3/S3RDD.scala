@@ -25,6 +25,8 @@ import com.amazonaws.services.s3.model.{ListObjectsRequest, S3ObjectSummary}
 import org.apache.spark.{InterruptibleIterator, TaskContext, Partition, SparkContext}
 import org.apache.spark.rdd.RDD
 
+import scala.io.Source
+
 
 private [s3] class S3Partition(partitionIndex: Int,
                                val keys: Seq[String],
@@ -106,9 +108,10 @@ class S3RDD(@transient sc: SparkContext,
       context.addTaskCompletionListener(context => close())
 
       val client = createS3Client()
-      val s3Iter = s3Partition.keys.iterator.flatMap { key =>
+      val s3InputStreams = s3Partition.keys.map { key =>
         CompressionUtils.decompress(client.getObject(bucket, key).getObjectContent)
       }
+      val s3Iter = s3InputStreams.iterator.flatMap(s => Source.fromInputStream(s).getLines)
       val reader = new InterruptibleIterator[String](context, s3Iter)
 
       override def hasNext: Boolean = reader.hasNext
@@ -116,6 +119,7 @@ class S3RDD(@transient sc: SparkContext,
       override def next(): String = reader.next()
 
       private def close() = {
+        s3InputStreams.foreach(_.close())
         inputMetrics.updateBytesRead()
       }
     }
