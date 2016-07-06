@@ -61,6 +61,7 @@ class S3Iterator(bucket: String,
   private def initNextReader() = {
     while (iterIndex < keys.length && !reader.hasNext) {
       _bytesRead += s3Object.getObjectMetadata.getContentLength
+      inputMetrics.updateBytesRead()
       inputStream.close()
       reader = newIter(iterIndex)
       iterIndex += 1
@@ -70,6 +71,10 @@ class S3Iterator(bucket: String,
   private def bytesRead() = _bytesRead
 
   private def close() = {
+    if (iterIndex == keys.length && !reader.hasNext) {
+      _bytesRead += s3Object.getObjectMetadata.getContentLength
+      inputMetrics.updateBytesRead()
+    }
     inputStream.close()
   }
 }
