@@ -20,7 +20,7 @@ import com.amazonaws.auth.{DefaultAWSCredentialsProviderChain, BasicAWSCredentia
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{ListObjectsRequest, S3ObjectSummary}
 
-import org.apache.spark.{TaskContext, Partition, SparkContext}
+import org.apache.spark.{InterruptibleIterator, TaskContext, Partition, SparkContext}
 import org.apache.spark.rdd.RDD
 
 
@@ -91,7 +91,7 @@ class S3RDD(@transient sc: SparkContext,
   override def compute(partition: Partition, context: TaskContext): Iterator[String] = {
     val s3Partition = partition.asInstanceOf[S3Partition]
     val client = createS3Client()
-    new S3Iterator(bucket, client, s3Partition, context)
+    new InterruptibleIterator[String](context, new S3Iterator(bucket, client, s3Partition, context))
   }
 
   override protected def getPartitions: Array[Partition] = {

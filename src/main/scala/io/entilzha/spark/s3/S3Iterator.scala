@@ -17,12 +17,15 @@ import java.io.InputStream
 
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.S3Object
-import org.apache.spark.{InterruptibleIterator, TaskContext}
+import org.apache.spark.TaskContext
 import org.apache.spark.executor.{InputMetrics, DataReadMethod}
 
 import scala.io.Source
 
-class S3Iterator(bucket: String, client: AmazonS3Client, partition: S3Partition, context: TaskContext) extends Iterator[String]{
+class S3Iterator(bucket: String,
+                 client: AmazonS3Client,
+                 partition: S3Partition,
+                 context: TaskContext) extends Iterator[String]{
   val taskMetrics = context.taskMetrics()
   val inputMetrics = PrivateMethodUtil.p(taskMetrics)(
     'getInputMetricsForReadMethod)(DataReadMethod.Network).asInstanceOf[InputMetrics]
@@ -52,7 +55,7 @@ class S3Iterator(bucket: String, client: AmazonS3Client, partition: S3Partition,
   private def newIter(iterIndex: Int): Iterator[String] = {
     s3Object = client.getObject(bucket, keys(iterIndex))
     inputStream = CompressionUtils.decompress(s3Object.getObjectContent)
-    new InterruptibleIterator[String](context, Source.fromInputStream(inputStream).getLines)
+    Source.fromInputStream(inputStream).getLines
   }
 
   private def initNextReader() = {
