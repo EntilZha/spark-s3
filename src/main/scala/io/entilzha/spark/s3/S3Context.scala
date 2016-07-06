@@ -14,6 +14,8 @@
 
 package io.entilzha.spark.s3
 
+import scala.language.implicitConversions
+
 import org.apache.spark.SparkContext
 
 
