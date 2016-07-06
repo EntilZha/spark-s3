@@ -348,19 +348,19 @@
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="io.entilzha.spark.s3.S3Context#textFileByPrefix" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="textFileByPrefix(bucket:String,prefix:String,additionalPrefixes:String*):io.entilzha.spark.s3.S3RDD"></a>
-      <a id="textFileByPrefix(String,String,String*):S3RDD"></a>
+      <a id="textFileByPrefix(bucket:String,prefixes:String*):io.entilzha.spark.s3.S3RDD"></a>
+      <a id="textFileByPrefix(String,String*):S3RDD"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">textFileByPrefix</span><span class="params">(<span name="bucket">bucket: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="prefix">prefix: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="additionalPrefixes">additionalPrefixes: <span class="extype" name="scala.Predef.String">String</span>*</span>)</span><span class="result">: <a href="S3RDD.html" class="extype" name="io.entilzha.spark.s3.S3RDD">S3RDD</a></span>
+        <span class="name">textFileByPrefix</span><span class="params">(<span name="bucket">bucket: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="prefixes">prefixes: <span class="extype" name="scala.Predef.String">String</span>*</span>)</span><span class="result">: <a href="S3RDD.html" class="extype" name="io.entilzha.spark.s3.S3RDD">S3RDD</a></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Basic entrypoint to Amazon S3 access.</p><div class="fullcomment"><div class="comment cmt"><p>Basic entrypoint to Amazon S3 access. Requires a S3 bucket and at least one prefix to match on
-</p></div><dl class="paramcmts block"><dt class="param">bucket</dt><dd class="cmt"><p>Bucket to read from</p></dd><dt class="param">prefix</dt><dd class="cmt"><p>First prefix to match</p></dd><dt class="param">additionalPrefixes</dt><dd class="cmt"><p>Additional prefixes to match</p></dd><dt>returns</dt><dd class="cmt"><p><a href="S3RDD.html" class="extype" name="io.entilzha.spark.s3.S3RDD">S3RDD</a> with contents of files with bucket and prefixes
+      <p class="shortcomment cmt">Basic entry point to Amazon S3 access.</p><div class="fullcomment"><div class="comment cmt"><p>Basic entry point to Amazon S3 access. Requires a S3 bucket and at least one prefix to match on
+</p></div><dl class="paramcmts block"><dt class="param">bucket</dt><dd class="cmt"><p>Bucket to read from</p></dd><dt class="param">prefixes</dt><dd class="cmt"><p>List of prefixes to match files with</p></dd><dt>returns</dt><dd class="cmt"><p><a href="S3RDD.html" class="extype" name="io.entilzha.spark.s3.S3RDD">S3RDD</a> with contents of files with bucket and prefixes
 </p></dd></dl><dl class="attributes block"> <dt>Annotations</dt><dd>
                 <span class="name">@varargs</span><span class="args">()</span>
               
