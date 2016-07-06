@@ -39,7 +39,7 @@ import scala.collection.mutable
   * Journal on Applied Mathematics 17 (2): 416-429. doi:10.1137/0117039
   */
 private [s3] object LPTAlgorithm {
-  private case class Partition(size: Long, files: Seq[String])
+  private case class Partition(size: Long, files: Array[String])
 
   /**
     * Given a list of files, their sizes, number of partitions to make, and a size error, group them
@@ -55,7 +55,7 @@ private [s3] object LPTAlgorithm {
     */
   def calculateOptimalPartitions(files: Seq[(String, Long)],
                                  nPartitions: Int,
-                                 sizeError: Long = 0): Seq[(Long, Seq[String])] = {
+                                 sizeError: Long = 0): Seq[(Long, Array[String])] = {
     def PartitionOrder = new Ordering[Partition] {
       def compare(left: Partition, right: Partition) = {
         if (math.abs(left.size - right.size) <= sizeError) {
@@ -65,7 +65,7 @@ private [s3] object LPTAlgorithm {
         }
       }
     }
-    val partitions = List.fill(nPartitions)(Partition(0L, Seq.empty[String]))
+    val partitions = Seq.fill(nPartitions)(Partition(0L, Array.empty[String]))
     val queue = new mutable.PriorityQueue[Partition]()(PartitionOrder) ++ partitions
     files.sortBy(-_._2).foreach { case (file, size) =>
       val partition = queue.dequeue()

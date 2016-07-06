@@ -14,22 +14,18 @@
 
 package io.entilzha.spark.s3
 
-import org.apache.spark.executor.{InputMetrics, DataReadMethod}
-
 import scala.collection.JavaConverters._
 
 import com.amazonaws.auth.{DefaultAWSCredentialsProviderChain, BasicAWSCredentials}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{ListObjectsRequest, S3ObjectSummary}
 
-import org.apache.spark.{InterruptibleIterator, TaskContext, Partition, SparkContext}
+import org.apache.spark.{TaskContext, Partition, SparkContext}
 import org.apache.spark.rdd.RDD
-
-import scala.io.Source
 
 
 private [s3] class S3Partition(partitionIndex: Int,
-                               val keys: Seq[String],
+                               val keys: Array[String],
                                val size: Long) extends Partition {
   override def index: Int = partitionIndex
 }
@@ -94,43 +90,15 @@ class S3RDD(@transient sc: SparkContext,
 
   override def compute(partition: Partition, context: TaskContext): Iterator[String] = {
     val s3Partition = partition.asInstanceOf[S3Partition]
-    val iter = new Iterator[String] {
-      val taskMetrics = context.taskMetrics()
-
-      // Spark Hadoop RDDs use getInputMetricsForReadMethod to help set input metrics
-      // Unfortunately that method is private and the only way to set inputMetrics to a non-None
-      // value. Therefore, it is necessary to use reflection to enable a call to the private method
-      val inputMetrics = PrivateMethodUtil.p(taskMetrics)(
-        'getInputMetricsForReadMethod)(DataReadMethod.Network).asInstanceOf[InputMetrics]
-      inputMetrics.setBytesReadCallback(Some(() => {
-        s3Partition.size
-      }))
-      context.addTaskCompletionListener(context => close())
-
-      val client = createS3Client()
-      val s3InputStreams = s3Partition.keys.map { key =>
-        CompressionUtils.decompress(client.getObject(bucket, key).getObjectContent)
-      }
-      val s3Iter = s3InputStreams.iterator.flatMap(s => Source.fromInputStream(s).getLines)
-      val reader = new InterruptibleIterator[String](context, s3Iter)
-
-      override def hasNext: Boolean = reader.hasNext
-
-      override def next(): String = reader.next()
-
-      private def close() = {
-        s3InputStreams.foreach(_.close())
-        inputMetrics.updateBytesRead()
-      }
-    }
-    iter
+    val client = createS3Client()
+    new S3Iterator(bucket, client, s3Partition, context)
   }
 
   override protected def getPartitions: Array[Partition] = {
     val summaries = listSummaries(bucket, prefixes)
     if (summaries.length <= defaultNumPartitions) {
       summaries.map(s => (s.getKey, s.getSize)).zipWithIndex.map {
-        case ((key, size), i) => new S3Partition(i, Seq(key), size)
+        case ((key, size), i) => new S3Partition(i, Array(key), size)
       }.toArray
     } else {
       val files = summaries.map(f => (f.getKey, f.getSize))
