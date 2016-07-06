@@ -22,7 +22,7 @@ import org.apache.spark.executor.{InputMetrics, DataReadMethod}
 
 import scala.io.Source
 
-class S3Iterator(bucket: String,
+private [s3] class S3Iterator(bucket: String,
                  client: AmazonS3Client,
                  partition: S3Partition,
                  context: TaskContext) extends Iterator[String]{
