@@ -13,14 +13,15 @@
  */
 package io.entilzha.spark.s3
 
-import java.io.InputStream
+import java.io.{InputStream, BufferedInputStream}
+
+import scala.io.Source
 
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.S3Object
 import org.apache.spark.TaskContext
 import org.apache.spark.executor.{InputMetrics, DataReadMethod}
 
-import scala.io.Source
 
 private [s3] class S3Iterator(bucket: String,
                  client: AmazonS3Client,
@@ -54,15 +55,16 @@ private [s3] class S3Iterator(bucket: String,
 
   private def newIter(iterIndex: Int): Iterator[String] = {
     s3Object = client.getObject(bucket, keys(iterIndex))
-    inputStream = CompressionUtils.decompress(s3Object.getObjectContent)
+    val bufferedStream = new BufferedInputStream(s3Object.getObjectContent)
+    inputStream = CompressionUtils.decompress(bufferedStream)
     Source.fromInputStream(inputStream).getLines
   }
 
   private def initNextReader() = {
     while (iterIndex < keys.length && !reader.hasNext) {
+      inputStream.close()
       _bytesRead += s3Object.getObjectMetadata.getContentLength
       inputMetrics.updateBytesRead()
-      inputStream.close()
       reader = newIter(iterIndex)
       iterIndex += 1
     }

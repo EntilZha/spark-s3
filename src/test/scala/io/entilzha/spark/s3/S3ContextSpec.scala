@@ -35,7 +35,7 @@ class S3ContextSpec extends FlatSpec with Matchers with BeforeAndAfter {
     }
   }
 
-  val lines = Seq("test line 0", "test line 1", "test line 2")
+  val lines = Array("test line 0", "test line 1", "test line 2")
 
   it should "Read plain text from S3" in {
     val s3Lines = sc.s3.textFileByPrefix("entilzha.io", "spark-s3/test-text.txt").collect()
