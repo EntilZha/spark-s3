@@ -24,7 +24,9 @@ organizationName := "Pedro Rodriguez"
 
 organizationHomepage := Some(url("https://github.com/EntilZha"))
 
-licenses += "Apache V2" -> url("https://raw.githubusercontent.com/EntilZha/spark-s3/master/LICENSE")
+licenses := Seq("Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
+
+homepage := Some(url("https://github.com/EntilZha/spark-s3"))
 
 scalaVersion := "2.10.6"
 
@@ -47,3 +49,6 @@ site.includeScaladoc()
 ghpages.settings
 
 git.remoteRepo := "git@github.com:EntilZha/spark-s3.git"
+
+// Maven publish settings for sonatype
+publishMavenStyle := true
