@@ -52,3 +52,11 @@ git.remoteRepo := "git@github.com:EntilZha/spark-s3.git"
 
 // Maven publish settings for sonatype
 publishMavenStyle := true
+
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
