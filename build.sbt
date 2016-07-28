@@ -60,3 +60,16 @@ publishTo := {
   else
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
+
+pomExtra :=
+    <scm>
+      <url>git@github.com:EntilZha/spark-s3.git</url>
+      <connection>scm:git:git@github.com:EntilZha/spark-s3.git</connection>
+    </scm>
+    <developers>
+      <developer>
+        <id>EntilZha</id>
+        <name>Pedro Rodriguez</name>
+        <url>https://pedrorodriguez.io</url>
+      </developer>
+    </developers>
